@@ -8,31 +8,29 @@
 </head>
 <body>
 
-<div id="login" class="screen">
+<div id="login" class="screen fade">
   <div class="box">
-    <h2>Номер телефона:</h2>
+    <h2>Twelve</h2>
+    <p>Введите номер</p>
     <input id="phone">
     <button onclick="login()">Войти</button>
-    <div id="error" class="error"></div>
+    <div id="error"></div>
   </div>
 </div>
 
-<div id="main" class="screen hidden">
+<div id="main" class="hidden fade">
   <h1>Twelve</h1>
-
-  <div id="ride"></div>
-
-  <button onclick="openScanner()">📷</button>
-  <button onclick="openPay()">Оплата</button>
-  <button onclick="endRide()">Завершить</button>
+  <button class="big" onclick="openScanner()">Сканировать</button>
 </div>
 
-<div id="admin" class="screen hidden">
-  <h1>Админка</h1>
+<div id="admin" class="hidden fade">
+  <h1>Админ панель</h1>
 
-  <input id="newId" placeholder="ID самоката">
-  <input id="newBat" placeholder="Заряд">
-  <button onclick="createScooter()">Добавить</button>
+  <button onclick="openScanner(true)">Добавить через QR</button>
+
+  <input id="id" placeholder="ID (6 цифр)">
+  <input id="bat" placeholder="Заряд">
+  <button onclick="create()">Добавить</button>
 
   <div id="list"></div>
 </div>
