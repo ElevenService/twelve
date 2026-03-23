@@ -1,10 +1,18 @@
 const express = require("express");
 const app = express();
 
-app.get("/", (req,res)=>{
-  res.send("Twelve работает 🚀");
+// Главная страница
+app.get("/", (req, res) => {
+  res.send(`
+    <h1 style="text-align:center; margin-top:50px;">
+      Twelve работает 🚀
+    </h1>
+  `);
 });
 
-app.listen(3000, ()=>{
-  console.log("SERVER STARTED");
+// ВАЖНО ДЛЯ RENDER
+const PORT = process.env.PORT || 3000;
+
+app.listen(PORT, () => {
+  console.log("SERVER STARTED on " + PORT);
 });
