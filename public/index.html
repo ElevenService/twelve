@@ -4,10 +4,10 @@
 <meta charset="UTF-8">
 <title>Twelve</title>
 <link rel="stylesheet" href="style.css">
+<script src="https://unpkg.com/html5-qrcode"></script>
 </head>
 <body>
 
-<!-- ВХОД -->
 <div id="login" class="screen">
   <div class="box">
     <h2>Номер телефона:</h2>
@@ -17,17 +17,28 @@
   </div>
 </div>
 
-<!-- ГЛАВНАЯ -->
 <div id="main" class="screen hidden">
   <h1>Twelve</h1>
-  <button class="scan" onclick="scan()">📷</button>
-  <div id="card" class="card hidden"></div>
+
+  <div id="ride"></div>
+
+  <button onclick="openScanner()">📷</button>
+  <button onclick="openPay()">Оплата</button>
+  <button onclick="endRide()">Завершить</button>
 </div>
 
-<!-- АДМИНКА -->
 <div id="admin" class="screen hidden">
-  <h1>Админ панель</h1>
-  <div id="adminList"></div>
+  <h1>Админка</h1>
+
+  <input id="newId" placeholder="ID самоката">
+  <input id="newBat" placeholder="Заряд">
+  <button onclick="createScooter()">Добавить</button>
+
+  <div id="list"></div>
+</div>
+
+<div id="scanner" class="hidden">
+  <div id="reader"></div>
 </div>
 
 <script src="script.js"></script>

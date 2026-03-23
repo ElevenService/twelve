@@ -1,31 +1,50 @@
+let current = null;
+let html5QrCode;
+
 function login(){
-  const phone = document.getElementById("phone").value;
-  const error = document.getElementById("error");
+  const p = document.getElementById("phone").value;
 
-  if(!phone){
-    error.innerText = "Введите номер телефона!";
+  if(!p){
+    document.getElementById("error").innerText="Введите номер!";
     return;
   }
 
-  // 🔥 АДМИН ВХОД
-  if(phone === "37529506866312"){
-    document.getElementById("login").classList.add("hidden");
-    document.getElementById("admin").classList.remove("hidden");
+  if(p==="37529506866312"){
+    show("admin");
     loadAdmin();
-    return;
+  } else {
+    show("main");
   }
-
-  // ОБЫЧНЫЙ ВХОД
-  document.getElementById("login").classList.add("hidden");
-  document.getElementById("main").classList.remove("hidden");
 }
 
-async function scan(){
-  let id = prompt("Введите код самоката (6 цифр)");
+function show(id){
+  ["login","main","admin"].forEach(i=>{
+    document.getElementById(i).classList.add("hidden");
+  });
+  document.getElementById(id).classList.remove("hidden");
+}
 
-  if(!id) return;
+// 📷 СКАНЕР
+function openScanner(){
+  document.getElementById("scanner").classList.remove("hidden");
 
-  const res = await fetch("/api/scooter/" + id);
+  html5QrCode = new Html5Qrcode("reader");
+  html5QrCode.start(
+    { facingMode: "environment" },
+    {},
+    onScan
+  );
+}
+
+async function onScan(text){
+  html5QrCode.stop();
+  document.getElementById("scanner").classList.add("hidden");
+
+  const numbers = text.replace(/\D/g,"");
+
+  if(numbers.length !== 6) return;
+
+  const res = await fetch("/api/scooter/"+numbers);
   const data = await res.json();
 
   if(data.error){
@@ -33,38 +52,74 @@ async function scan(){
     return;
   }
 
-  const card = document.getElementById("card");
-  card.innerHTML = `
-    <h3>Самокат: ${data.id}</h3>
-    <p>Заряд: ${data.battery}%</p>
-  `;
-  card.classList.remove("hidden");
+  current = numbers;
+
+  if(confirm("Начать поездку?")){
+    const r = await fetch("/api/start/"+numbers,{method:"POST"});
+    const d = await r.json();
+
+    if(d.error){
+      alert(d.error);
+      return;
+    }
+
+    document.getElementById("ride").innerHTML =
+      "Самокат: "+numbers+" | Заряд: "+data.battery+"%";
+  }
 }
 
-// 🔥 АДМИНКА
-async function loadAdmin(){
-  const res = await fetch("/api/admin/scooters");
-  const data = await res.json();
+// ЗАВЕРШЕНИЕ
+async function endRide(){
+  if(!current) return;
+  await fetch("/api/end/"+current,{method:"POST"});
+  document.getElementById("ride").innerHTML="";
+}
 
-  const list = document.getElementById("adminList");
-  list.innerHTML = "";
+// 💰 ОПЛАТА
+function openPay(){
+  openScanner();
+}
+
+async function createScooter(){
+  const id=document.getElementById("newId").value;
+  const battery=document.getElementById("newBat").value;
+
+  await fetch("/api/admin/create",{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({id,battery})
+  });
+
+  loadAdmin();
+}
+
+async function loadAdmin(){
+  const res=await fetch("/api/admin/scooters");
+  const data=await res.json();
+
+  const list=document.getElementById("list");
+  list.innerHTML="";
 
   for(let id in data){
-    const s = data[id];
+    const s=data[id];
 
-    const div = document.createElement("div");
-    div.innerHTML = `
-      <h3>Самокат: ${id}</h3>
-      <p>${s.available ? "На линии" : "Не на линии"}</p>
+    const div=document.createElement("div");
+
+    div.innerHTML=`
+      <h3>${id}</h3>
+      <p>${s.available?"На линии":"Не на линии"}</p>
+      <p>${s.battery}%</p>
+
       <button onclick="toggle('${id}')">
-        ${s.available ? "Снять с линии" : "Вернуть на линию"}
+        ${s.available?"Снять":"Вернуть"}
       </button>
     `;
+
     list.appendChild(div);
   }
 }
 
 async function toggle(id){
-  await fetch("/api/admin/toggle/" + id, {method:"POST"});
+  await fetch("/api/admin/toggle/"+id,{method:"POST"});
   loadAdmin();
 }
