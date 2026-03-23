@@ -1,40 +1,54 @@
 <!DOCTYPE html>
 <html>
 <head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <meta charset="UTF-8">
 <title>Twelve</title>
+
 <link rel="stylesheet" href="style.css">
 <script src="https://unpkg.com/html5-qrcode"></script>
 </head>
+
 <body>
 
-<div id="login" class="screen fade">
-  <div class="box">
-    <h2>Twelve</h2>
-    <p>Введите номер</p>
-    <input id="phone">
-    <button onclick="login()">Войти</button>
-    <div id="error"></div>
+<!-- LOGIN -->
+<div id="login" class="screen">
+  <h2>Twelve</h2>
+  <input id="phone" placeholder="Номер телефона">
+  <button onclick="login()">Войти</button>
+  <div id="error"></div>
+</div>
+
+<!-- MAIN -->
+<div id="main" class="hidden">
+
+  <div class="top">
+    <span id="balance">Баланс: 0</span>
   </div>
+
+  <div id="ride" class="ride hidden"></div>
+
+  <button class="mainBtn" onclick="openScanner()">Сканировать</button>
+  <button class="gray" onclick="openPay()">Оплата</button>
+  <button class="end hidden" onclick="endRide()">Завершить</button>
+
 </div>
 
-<div id="main" class="hidden fade">
-  <h1>Twelve</h1>
-  <button class="big" onclick="openScanner()">Сканировать</button>
-</div>
+<!-- ADMIN -->
+<div id="admin" class="hidden">
 
-<div id="admin" class="hidden fade">
-  <h1>Админ панель</h1>
+  <h2>Админ</h2>
 
-  <button onclick="openScanner(true)">Добавить через QR</button>
-
-  <input id="id" placeholder="ID (6 цифр)">
+  <input id="id" placeholder="ID 6 цифр">
   <input id="bat" placeholder="Заряд">
   <button onclick="create()">Добавить</button>
+  <button onclick="openScanner(true)">QR добавить</button>
 
   <div id="list"></div>
+
 </div>
 
+<!-- SCANNER -->
 <div id="scanner" class="hidden">
   <div id="reader"></div>
 </div>
