@@ -4,104 +4,151 @@ const app = express();
 app.use(express.json());
 app.use(express.static("public"));
 
-let scooters = {}; // создаёшь сам
+// ДАННЫЕ
+let scooters = {};
 let balance = 0;
-let rides = {}; // активные поездки
+let rides = {};
 
-// СОЗДАТЬ САМОКАТ
+// ===== УТИЛИТЫ =====
+function validId(id){
+  return typeof id === "string" && /^\d{6}$/.test(id);
+}
+
+// ===== АДМИН =====
+
+// создать самокат
 app.post("/api/admin/create", (req,res)=>{
-  const {id,battery} = req.body;
+  try{
+    const {id,battery} = req.body;
 
-  if(!id || id.length !== 6){
-    return res.json({error:"ID = 6 цифр"});
+    if(!validId(id)){
+      return res.json({error:"ID должен быть 6 цифр"});
+    }
+
+    if(scooters[id]){
+      return res.json({error:"Уже существует"});
+    }
+
+    scooters[id] = {
+      available:true,
+      battery: Number(battery) || 100,
+      inUse:false
+    };
+
+    res.json({success:true});
+  }catch(e){
+    res.json({error:"Ошибка сервера"});
   }
-
-  scooters[id] = {
-    available:true,
-    battery:Number(battery)||100,
-    inUse:false
-  };
-
-  res.json({success:true});
 });
 
-// УДАЛИТЬ
+// удалить
 app.post("/api/admin/delete/:id",(req,res)=>{
-  delete scooters[req.params.id];
-  res.json({success:true});
+  try{
+    const id = req.params.id;
+    if(!scooters[id]) return res.json({error:"Нет такого"});
+    delete scooters[id];
+    res.json({success:true});
+  }catch{
+    res.json({error:"Ошибка"});
+  }
 });
 
-// СПИСОК
+// список
 app.get("/api/admin/scooters",(req,res)=>{
   res.json(scooters);
 });
 
-// ВКЛ/ВЫКЛ
+// включить/выключить
 app.post("/api/admin/toggle/:id",(req,res)=>{
-  scooters[req.params.id].available =
-    !scooters[req.params.id].available;
-  res.json({success:true});
+  try{
+    const id = req.params.id;
+    if(!scooters[id]) return res.json({error:"Нет такого"});
+    scooters[id].available = !scooters[id].available;
+    res.json({success:true});
+  }catch{
+    res.json({error:"Ошибка"});
+  }
 });
 
-// ПРОВЕРКА ПЕРЕД ПОЕЗДКОЙ
+// ===== ПОЛЬЗОВАТЕЛЬ =====
+
+// проверка самоката
 app.get("/api/scooter/:id",(req,res)=>{
-  const s = scooters[req.params.id];
+  const id = req.params.id;
 
-  if(!s) return res.json({error:"Не найден"});
-  if(!s.available) return res.json({error:"Самокат недоступен"});
-  if(s.inUse) return res.json({error:"Уже занят"});
+  if(!validId(id)) return res.json({error:"Неверный код"});
 
-  res.json({id:req.params.id,battery:s.battery});
+  const s = scooters[id];
+
+  if(!s) return res.json({error:"Самокат не найден"});
+  if(!s.available) return res.json({error:"Самокат отключён"});
+  if(s.inUse) return res.json({error:"Уже в аренде"});
+
+  res.json({id,battery:s.battery});
 });
 
-// СТАРТ
+// старт поездки
 app.post("/api/start/:id",(req,res)=>{
-  const id = req.params.id;
+  try{
+    const id = req.params.id;
 
-  if(balance < 0.10)
-    return res.json({error:"Пополните баланс!"});
+    if(!scooters[id]) return res.json({error:"Нет самоката"});
+    if(balance < 0.10) return res.json({error:"Недостаточно средств"});
+    if(scooters[id].inUse) return res.json({error:"Уже занят"});
 
-  scooters[id].inUse = true;
+    scooters[id].inUse = true;
 
-  rides[id] = {
-    start: Date.now()
-  };
+    rides[id] = {
+      start: Date.now()
+    };
 
-  res.json({success:true});
+    res.json({success:true});
+  }catch{
+    res.json({error:"Ошибка"});
+  }
 });
 
-// СТОП
+// завершение
 app.post("/api/end/:id",(req,res)=>{
-  const id = req.params.id;
+  try{
+    const id = req.params.id;
 
-  if(!rides[id]) return res.json({error:"Нет поездки"});
+    if(!rides[id]) return res.json({error:"Нет поездки"});
 
-  const time = Math.floor((Date.now() - rides[id].start)/60000);
-  const cost = time * 0.10;
+    const minutes = Math.max(1, Math.floor((Date.now() - rides[id].start)/60000));
+    const cost = minutes * 0.10;
 
-  balance -= cost;
+    balance -= cost;
+    if(balance < 0) balance = 0;
 
-  scooters[id].inUse = false;
-  delete rides[id];
+    scooters[id].inUse = false;
+    delete rides[id];
 
-  res.json({time,cost,balance});
+    res.json({minutes,cost,balance});
+  }catch{
+    res.json({error:"Ошибка"});
+  }
 });
 
-// БАЛАНС
+// баланс
 app.get("/api/balance",(req,res)=>{
   res.json({balance});
 });
 
-// ПОПОЛНЕНИЕ QR
+// пополнение (QR)
 app.post("/api/pay",(req,res)=>{
-  const code = req.body.code;
-  const num = code.replace(/\D/g,"");
+  try{
+    const code = req.body.code || "";
+    const num = code.replace(/\D/g,"");
 
-  if(num.length===1){
-    balance += Number(num);
+    if(num.length === 1){
+      balance += Number(num);
+    }
+
+    res.json({balance});
+  }catch{
+    res.json({error:"Ошибка"});
   }
-
-  res.json({balance});
 });
 
 const PORT = process.env.PORT || 3000;

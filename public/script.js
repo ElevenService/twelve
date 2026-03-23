@@ -1,21 +1,19 @@
 let current = null;
-let timer = 0;
 let interval;
-let qr;
 
 // LOGIN
 function login(){
-  const p = phone.value;
+  const p = document.getElementById("phone").value;
 
   if(!p){
-    error.innerText="Введите номер!";
+    error.innerText="Введите номер";
     return;
   }
 
   if(p==="37529506866312"){
     show("admin");
-    load();
-  } else {
+    loadAdmin();
+  }else{
     show("main");
     loadBalance();
   }
@@ -28,78 +26,54 @@ function show(id){
   document.getElementById(id).classList.remove("hidden");
 }
 
-// QR
-function openScanner(admin=false){
-  scanner.classList.remove("hidden");
+// СКАН (упрощённо без краша)
+async function scan(){
+  const id = prompt("Введите 6 цифр");
+  if(!id) return;
 
-  qr = new Html5Qrcode("reader");
+  const r = await fetch("/api/scooter/"+id);
+  const d = await r.json();
 
-  qr.start({facingMode:"environment"},{},text=>{
-    qr.stop();
-    scanner.classList.add("hidden");
-
-    const id = text.replace(/\D/g,"");
-
-    if(id.length!==6) return;
-
-    if(admin){
-      create(id);
-    } else {
-      startFlow(id);
-    }
-  });
-}
-
-// ПОЕЗДКА
-async function startFlow(id){
-  const res = await fetch("/api/scooter/"+id);
-  const data = await res.json();
-
-  if(data.error){
-    alert(data.error);
+  if(d.error){
+    alert(d.error);
     return;
   }
 
   if(confirm("Начать поездку?")){
-    const r = await fetch("/api/start/"+id,{method:"POST"});
-    const d = await r.json();
+    const s = await fetch("/api/start/"+id,{method:"POST"});
+    const res = await s.json();
 
-    if(d.error){
-      alert(d.error);
+    if(res.error){
+      alert(res.error);
       return;
     }
 
-    current = id;
-    startRide(data);
+    startRide(d);
   }
 }
 
 function startRide(data){
-  timer=0;
+  current = data.id;
 
-  ride.classList.remove("hidden");
-  document.querySelector(".end").classList.remove("hidden");
+  document.getElementById("endBtn").classList.remove("hidden");
 
-  interval=setInterval(()=>{
-    timer++;
-    ride.innerHTML=`
-      Самокат: ${data.id}<br>
-      Заряд: ${data.battery}%<br>
-      Время: ${timer} сек
-    `;
+  interval = setInterval(()=>{
+    document.getElementById("ride").classList.remove("hidden");
+    document.getElementById("ride").innerText =
+      "Самокат: "+data.id+" | "+data.battery+"%";
   },1000);
 }
 
 async function endRide(){
-  const res = await fetch("/api/end/"+current,{method:"POST"});
-  const data = await res.json();
+  const r = await fetch("/api/end/"+current,{method:"POST"});
+  const d = await r.json();
 
   clearInterval(interval);
 
-  alert("Стоимость: "+data.cost+" BYN");
+  alert("Стоимость: "+d.cost);
 
-  ride.classList.add("hidden");
-  document.querySelector(".end").classList.add("hidden");
+  document.getElementById("ride").classList.add("hidden");
+  document.getElementById("endBtn").classList.add("hidden");
 
   loadBalance();
 }
@@ -108,18 +82,28 @@ async function endRide(){
 async function loadBalance(){
   const r = await fetch("/api/balance");
   const d = await r.json();
-  balance.innerText="Баланс: "+d.balance;
+  document.getElementById("bal").innerText="Баланс: "+d.balance;
 }
 
 // ОПЛАТА
-function openPay(){
-  openScanner();
+async function pay(){
+  const code = prompt("Введите QR код");
+  if(!code) return;
+
+  const r = await fetch("/api/pay",{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({code})
+  });
+
+  const d = await r.json();
+  loadBalance();
 }
 
 // АДМИН
-async function create(idQR){
-  const id = idQR || document.getElementById("id").value;
-  const bat = document.getElementById("bat").value;
+async function create(){
+  const id = aid.value;
+  const bat = abat.value;
 
   await fetch("/api/admin/create",{
     method:"POST",
@@ -127,25 +111,20 @@ async function create(idQR){
     body:JSON.stringify({id,battery:bat})
   });
 
-  load();
+  loadAdmin();
 }
 
-async function load(){
+async function loadAdmin(){
   const r = await fetch("/api/admin/scooters");
   const data = await r.json();
 
   list.innerHTML="";
 
   for(let id in data){
-    const s = data[id];
-
-    const div=document.createElement("div");
+    const div = document.createElement("div");
 
     div.innerHTML=`
-      ${id}<br>
-      ${s.battery}%<br>
-
-      <button onclick="toggle('${id}')">Вкл/Выкл</button>
+      ${id} (${data[id].battery}%)
       <button onclick="del('${id}')">Удалить</button>
     `;
 
@@ -153,12 +132,7 @@ async function load(){
   }
 }
 
-async function toggle(id){
-  await fetch("/api/admin/toggle/"+id,{method:"POST"});
-  load();
-}
-
 async function del(id){
   await fetch("/api/admin/delete/"+id,{method:"POST"});
-  load();
+  loadAdmin();
 }

@@ -6,51 +6,39 @@
 <title>Twelve</title>
 
 <link rel="stylesheet" href="style.css">
-<script src="https://unpkg.com/html5-qrcode"></script>
 </head>
 
 <body>
 
-<!-- LOGIN -->
 <div id="login" class="screen">
   <h2>Twelve</h2>
   <input id="phone" placeholder="Номер телефона">
   <button onclick="login()">Войти</button>
-  <div id="error"></div>
+  <p id="error"></p>
 </div>
 
-<!-- MAIN -->
 <div id="main" class="hidden">
 
   <div class="top">
-    <span id="balance">Баланс: 0</span>
+    <span id="bal">Баланс: 0</span>
   </div>
 
   <div id="ride" class="ride hidden"></div>
 
-  <button class="mainBtn" onclick="openScanner()">Сканировать</button>
-  <button class="gray" onclick="openPay()">Оплата</button>
-  <button class="end hidden" onclick="endRide()">Завершить</button>
+  <button onclick="scan()">Сканировать</button>
+  <button onclick="pay()">Пополнить</button>
+  <button id="endBtn" class="hidden" onclick="endRide()">Завершить</button>
 
 </div>
 
-<!-- ADMIN -->
 <div id="admin" class="hidden">
-
   <h2>Админ</h2>
 
-  <input id="id" placeholder="ID 6 цифр">
-  <input id="bat" placeholder="Заряд">
+  <input id="aid" placeholder="ID 6 цифр">
+  <input id="abat" placeholder="Заряд">
   <button onclick="create()">Добавить</button>
-  <button onclick="openScanner(true)">QR добавить</button>
 
   <div id="list"></div>
-
-</div>
-
-<!-- SCANNER -->
-<div id="scanner" class="hidden">
-  <div id="reader"></div>
 </div>
 
 <script src="script.js"></script>
