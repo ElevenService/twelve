@@ -7,6 +7,7 @@
 </head>
 <body>
 
+<!-- ВХОД -->
 <div id="login" class="screen">
   <div class="box">
     <h2>Номер телефона:</h2>
@@ -16,12 +17,17 @@
   </div>
 </div>
 
+<!-- ГЛАВНАЯ -->
 <div id="main" class="screen hidden">
   <h1>Twelve</h1>
-
   <button class="scan" onclick="scan()">📷</button>
-
   <div id="card" class="card hidden"></div>
+</div>
+
+<!-- АДМИНКА -->
+<div id="admin" class="screen hidden">
+  <h1>Админ панель</h1>
+  <div id="adminList"></div>
 </div>
 
 <script src="script.js"></script>
