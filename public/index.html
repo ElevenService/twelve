@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Twelve</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div id="login" class="screen">
+  <div class="box">
+    <h2>Номер телефона:</h2>
+    <input id="phone">
+    <button onclick="login()">Войти</button>
+    <div id="error" class="error"></div>
+  </div>
+</div>
+
+<div id="main" class="screen hidden">
+  <h1>Twelve</h1>
+
+  <button class="scan" onclick="scan()">📷</button>
+
+  <div id="card" class="card hidden"></div>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>

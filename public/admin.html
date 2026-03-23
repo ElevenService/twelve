@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Admin</title>
+</head>
+<body style="background:#111;color:white;text-align:center;">
+
+<h1>Админка Twelve</h1>
+<div id="list"></div>
+
+<script>
+async function load(){
+  const res = await fetch("/api/admin/scooters");
+  const data = await res.json();
+
+  const list = document.getElementById("list");
+  list.innerHTML = "";
+
+  for(let id in data){
+    const s = data[id];
+
+    const div = document.createElement("div");
+    div.innerHTML = `
+      <h3>${id}</h3>
+      <p>${s.available ? "На линии" : "Не на линии"}</p>
+      <button onclick="toggle('${id}')">
+        ${s.available ? "Снять" : "Вернуть"}
+      </button>
+    `;
+    list.appendChild(div);
+  }
+}
+
+async function toggle(id){
+  await fetch("/api/admin/toggle/" + id, {method:"POST"});
+  load();
+}
+
+load();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,55 @@
+body {
+  margin:0;
+  background:#111;
+  color:white;
+  font-family:Arial;
+}
+
+.screen {
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  height:100vh;
+  flex-direction:column;
+}
+
+.hidden { display:none; }
+
+.box {
+  background:#222;
+  padding:20px;
+  border-radius:20px;
+}
+
+input {
+  padding:10px;
+  border-radius:10px;
+  border:none;
+}
+
+button {
+  margin-top:10px;
+  padding:10px 20px;
+  border:none;
+  border-radius:20px;
+  background:yellow;
+}
+
+.scan {
+  position:fixed;
+  bottom:30px;
+  width:70px;
+  height:70px;
+  border-radius:50%;
+}
+
+.card {
+  position:fixed;
+  bottom:120px;
+  background:#222;
+  padding:20px;
+  border-radius:20px;
+}
+.error {
+  color:red;
+}
