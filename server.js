@@ -5,7 +5,7 @@ app.use(express.json());
 app.use(express.static("public"));
 
 let scooters = {};
-let users = {}; // 🔥 ПОЛЬЗОВАТЕЛИ
+let users = {};
 let rides = {};
 
 // ===== ПРОВЕРКИ =====
@@ -17,9 +17,7 @@ function validPhone(phone){
   return /^\d{12}$/.test(phone);
 }
 
-// ===== ПОЛЬЗОВАТЕЛЬ =====
-
-// вход
+// ===== LOGIN =====
 app.post("/api/login",(req,res)=>{
   const {phone} = req.body;
 
@@ -34,13 +32,13 @@ app.post("/api/login",(req,res)=>{
   res.json({success:true});
 });
 
-// баланс
+// ===== БАЛАНС =====
 app.get("/api/balance/:phone",(req,res)=>{
   const u = users[req.params.phone];
   res.json({balance: u ? u.balance : 0});
 });
 
-// оплата
+// ===== ПОПОЛНЕНИЕ =====
 app.post("/api/pay",(req,res)=>{
   const {phone,code} = req.body;
 
@@ -59,7 +57,8 @@ app.post("/api/pay",(req,res)=>{
 app.post("/api/admin/create",(req,res)=>{
   const {id,battery} = req.body;
 
-  if(!validId(id)) return res.json({error:"ID 6 цифр"});
+  if(!validId(id)) return res.json({error:"ID = 6 цифр"});
+  if(scooters[id]) return res.json({error:"Уже есть"});
 
   scooters[id] = {
     available:true,

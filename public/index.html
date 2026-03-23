@@ -12,8 +12,15 @@
 
 <div id="login" class="screen">
   <h2>Twelve</h2>
-  <input id="phone" placeholder="375XXXXXXXXX" maxlength="12" inputmode="numeric">
+
+  <input id="phone"
+         placeholder="375XXXXXXXXX"
+         maxlength="12"
+         inputmode="numeric"
+         oninput="this.value=this.value.replace(/\D/g,'')">
+
   <button onclick="login()">Войти</button>
+
   <p id="error"></p>
 </div>
 
@@ -32,13 +39,16 @@
 </div>
 
 <div id="admin" class="hidden">
+
   <h2>Админ</h2>
 
   <input id="aid" placeholder="ID 6 цифр">
   <input id="abat" placeholder="Заряд">
+
   <button onclick="create()">Добавить</button>
 
   <div id="list"></div>
+
 </div>
 
 <script src="script.js"></script>
