@@ -1,88 +1,103 @@
 const express = require("express");
+const fs = require("fs");
+
 const app = express();
 
 app.use(express.json());
 app.use(express.static("public"));
 
-let scooters = {};
-let users = {};
-let rides = {};
+let DB = { scooters:{}, users:{}, rides:{}, payments:{} };
 
-// ===== ПРОВЕРКИ =====
-function validId(id){
-  return /^\d{6}$/.test(id);
+if(fs.existsSync("data.json")){
+  DB = JSON.parse(fs.readFileSync("data.json"));
 }
 
-function validPhone(phone){
-  return /^\d{12}$/.test(phone);
+function save(){
+  fs.writeFileSync("data.json", JSON.stringify(DB,null,2));
 }
 
-// ===== LOGIN =====
+const validId = id => /^\d{6}$/.test(id);
+const validPhone = p => /^\d{12}$/.test(p);
+
+// LOGIN
 app.post("/api/login",(req,res)=>{
   const {phone} = req.body;
 
-  if(!validPhone(phone)){
-    return res.json({error:"Неверный номер"});
-  }
+  if(!validPhone(phone)) return res.json({error:"Неверный номер"});
 
-  if(!users[phone]){
-    users[phone] = {balance:0};
+  if(!DB.users[phone]){
+    DB.users[phone] = {balance:0};
+    save();
   }
 
   res.json({success:true});
 });
 
-// ===== БАЛАНС =====
+// БАЛАНС
 app.get("/api/balance/:phone",(req,res)=>{
-  const u = users[req.params.phone];
+  const u = DB.users[req.params.phone];
   res.json({balance: u ? u.balance : 0});
 });
 
-// ===== ПОПОЛНЕНИЕ =====
+// ПОПОЛНЕНИЕ
 app.post("/api/pay",(req,res)=>{
   const {phone,code} = req.body;
 
-  const num = code.replace(/\D/g,"");
+  const pay = DB.payments[code];
 
-  if(num.length === 1){
-    users[phone].balance += Number(num);
-  }
+  if(!pay) return res.json({error:"Код неверный"});
 
-  res.json({balance: users[phone].balance});
+  DB.users[phone].balance += pay.amount;
+
+  delete DB.payments[code];
+  save();
+
+  res.json({balance: DB.users[phone].balance});
 });
 
-// ===== САМОКАТЫ =====
+// АДМИН КОДЫ
+app.post("/api/admin/payment",(req,res)=>{
+  const {code,amount} = req.body;
 
-// создать
+  DB.payments[code] = {amount:Number(amount)};
+  save();
+
+  res.json({success:true});
+});
+
+app.get("/api/admin/payments",(req,res)=>{
+  res.json(DB.payments);
+});
+
+// САМОКАТЫ
 app.post("/api/admin/create",(req,res)=>{
   const {id,battery} = req.body;
 
-  if(!validId(id)) return res.json({error:"ID = 6 цифр"});
-  if(scooters[id]) return res.json({error:"Уже есть"});
+  if(!validId(id)) return res.json({error:"6 цифр"});
 
-  scooters[id] = {
+  DB.scooters[id] = {
     available:true,
     battery:Number(battery)||100,
     inUse:false
   };
 
+  save();
   res.json({success:true});
 });
 
-// удалить
 app.post("/api/admin/delete/:id",(req,res)=>{
-  delete scooters[req.params.id];
+  delete DB.scooters[req.params.id];
+  save();
   res.json({success:true});
 });
 
-// список
 app.get("/api/admin/scooters",(req,res)=>{
-  res.json(scooters);
+  res.json(DB.scooters);
 });
 
-// проверка
+// ПРОВЕРКА
 app.get("/api/scooter/:id",(req,res)=>{
-  const s = scooters[req.params.id];
+  const s = DB.scooters[req.params.id];
 
   if(!s) return res.json({error:"Не найден"});
   if(!s.available) return res.json({error:"Недоступен"});
@@ -91,44 +106,47 @@ app.get("/api/scooter/:id",(req,res)=>{
   res.json({id:req.params.id,battery:s.battery});
 });
 
-// старт
+// СТАРТ
 app.post("/api/start",(req,res)=>{
   const {id,phone} = req.body;
 
-  const s = scooters[id];
-  const u = users[phone];
+  const s = DB.scooters[id];
+  const u = DB.users[phone];
 
-  if(!s) return res.json({error:"Нет самоката"});
-  if(!u) return res.json({error:"Нет пользователя"});
-  if(u.balance < 0.10) return res.json({error:"Пополните баланс"});
+  if(!s || !u) return res.json({error:"Ошибка"});
+  if(u.balance < 0.10) return res.json({error:"Нет денег"});
   if(s.inUse) return res.json({error:"Занят"});
 
   s.inUse = true;
 
-  rides[id] = {
+  DB.rides[id] = {
     phone,
     start: Date.now()
   };
 
+  save();
   res.json({success:true});
 });
 
-// стоп
+// СТОП
 app.post("/api/end",(req,res)=>{
   const {id} = req.body;
 
-  const ride = rides[id];
+  const ride = DB.rides[id];
   if(!ride) return res.json({error:"Нет поездки"});
 
   const minutes = Math.max(1, Math.floor((Date.now()-ride.start)/60000));
   const cost = minutes * 0.10;
 
-  users[ride.phone].balance -= cost;
-  if(users[ride.phone].balance < 0) users[ride.phone].balance = 0;
+  DB.users[ride.phone].balance -= cost;
+  if(DB.users[ride.phone].balance < 0)
+    DB.users[ride.phone].balance = 0;
 
-  scooters[id].inUse = false;
-  delete rides[id];
+  DB.scooters[id].inUse = false;
 
+  delete DB.rides[id];
+
+  save();
   res.json({cost});
 });
 

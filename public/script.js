@@ -1,40 +1,28 @@
-let phoneGlobal = "";
-let current = null;
+let phoneGlobal="";
+let current=null;
 let interval;
 
-// LOGIN
 async function login(){
-  const phone = document.getElementById("phone").value.trim();
-  const error = document.getElementById("error");
-
-  if(!phone){
-    error.innerText="Введите номер!";
-    return;
-  }
+  const phone=document.getElementById("phone").value.trim();
+  const error=document.getElementById("error");
 
   if(!/^\d{12}$/.test(phone)){
     error.innerText="12 цифр!";
     return;
   }
 
-  phoneGlobal = phone;
+  phoneGlobal=phone;
 
-  const res = await fetch("/api/login",{
+  await fetch("/api/login",{
     method:"POST",
     headers:{"Content-Type":"application/json"},
     body:JSON.stringify({phone})
   });
 
-  const data = await res.json();
-
-  if(data.error){
-    error.innerText=data.error;
-    return;
-  }
-
   if(phone==="375295068663"){
     show("admin");
     loadAdmin();
+    loadPays();
   }else{
     show("main");
     loadBalance();
@@ -48,59 +36,49 @@ function show(id){
   document.getElementById(id).classList.remove("hidden");
 }
 
-// СКАН (упрощённый)
 async function scan(){
-  const id = prompt("Введите 6 цифр");
-
+  const id=prompt("ID 6 цифр");
   if(!/^\d{6}$/.test(id)) return;
 
-  const r = await fetch("/api/scooter/"+id);
-  const d = await r.json();
+  const r=await fetch("/api/scooter/"+id);
+  const d=await r.json();
 
-  if(d.error){
-    alert(d.error);
-    return;
-  }
+  if(d.error){alert(d.error);return;}
 
   if(confirm("Начать поездку?")){
-    const s = await fetch("/api/start",{
+    const s=await fetch("/api/start",{
       method:"POST",
       headers:{"Content-Type":"application/json"},
       body:JSON.stringify({id,phone:phoneGlobal})
     });
 
-    const res = await s.json();
-
-    if(res.error){
-      alert(res.error);
-      return;
-    }
+    const res=await s.json();
+    if(res.error){alert(res.error);return;}
 
     startRide(d);
   }
 }
 
 function startRide(data){
-  current = data.id;
+  current=data.id;
 
   document.getElementById("endBtn").classList.remove("hidden");
 
-  interval = setInterval(()=>{
+  interval=setInterval(()=>{
     document.getElementById("ride").classList.remove("hidden");
-    document.getElementById("ride").innerText =
-      "Самокат: "+data.id+" | "+data.battery+"%";
+    document.getElementById("ride").innerText=
+      `Самокат: ${data.id} | ${data.battery}%`;
   },1000);
 }
 
-// СТОП
 async function endRide(){
-  const r = await fetch("/api/end",{
+  const r=await fetch("/api/end",{
     method:"POST",
     headers:{"Content-Type":"application/json"},
     body:JSON.stringify({id:current})
   });
 
-  const d = await r.json();
+  const d=await r.json();
 
   clearInterval(interval);
 
@@ -112,34 +90,33 @@ async function endRide(){
   loadBalance();
 }
 
-// БАЛАНС
 async function loadBalance(){
-  const r = await fetch("/api/balance/"+phoneGlobal);
-  const d = await r.json();
+  const r=await fetch("/api/balance/"+phoneGlobal);
+  const d=await r.json();
 
-  document.getElementById("bal").innerText =
+  document.getElementById("bal").innerText=
     "Баланс: "+d.balance.toFixed(2);
 }
 
-// ОПЛАТА
 async function pay(){
-  const code = prompt("Введите QR код (1 цифра)");
-
+  const code=prompt("Код пополнения");
   if(!code) return;
 
-  await fetch("/api/pay",{
+  const r=await fetch("/api/pay",{
     method:"POST",
     headers:{"Content-Type":"application/json"},
     body:JSON.stringify({phone:phoneGlobal,code})
   });
 
+  const d=await r.json();
+  if(d.error) alert(d.error);
+
   loadBalance();
 }
 
-// АДМИН
 async function create(){
-  const id = document.getElementById("aid").value;
-  const bat = document.getElementById("abat").value;
+  const id=document.getElementById("aid").value;
+  const bat=document.getElementById("abat").value;
 
   await fetch("/api/admin/create",{
     method:"POST",
@@ -151,25 +128,48 @@ async function create(){
 }
 
 async function loadAdmin(){
-  const r = await fetch("/api/admin/scooters");
-  const data = await r.json();
+  const r=await fetch("/api/admin/scooters");
+  const data=await r.json();
 
-  const list = document.getElementById("list");
   list.innerHTML="";
 
   for(let id in data){
-    const div = document.createElement("div");
-
-    div.innerHTML=`
-      ${id} (${data[id].battery}%)
-      <button onclick="del('${id}')">Удалить</button>
+    list.innerHTML+=`
+      <div>
+        ${id} (${data[id].battery}%)
+        <button onclick="del('${id}')">Удалить</button>
+      </div>
     `;
-
-    list.appendChild(div);
   }
 }
 
 async function del(id){
   await fetch("/api/admin/delete/"+id,{method:"POST"});
   loadAdmin();
+}
+
+async function createPay(){
+  const code=prompt("Код");
+  const amount=prompt("Сумма");
+
+  await fetch("/api/admin/payment",{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({code,amount})
+  });
+
+  loadPays();
+}
+
+async function loadPays(){
+  const r=await fetch("/api/admin/payments");
+  const data=await r.json();
+
+  pays.innerHTML="";
+
+  for(let c in data){
+    pays.innerHTML+=`
+      <div>${c} = ${data[c].amount}</div>
+    `;
+  }
 }

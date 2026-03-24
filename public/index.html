@@ -4,7 +4,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta charset="UTF-8">
 <title>Twelve</title>
-
 <link rel="stylesheet" href="style.css">
 </head>
 
@@ -14,18 +13,16 @@
   <h2>Twelve</h2>
 
   <input id="phone"
-         placeholder="375XXXXXXXXX"
-         maxlength="12"
-         inputmode="numeric"
-         oninput="this.value=this.value.replace(/\D/g,'')">
+    placeholder="375XXXXXXXXX"
+    maxlength="12"
+    inputmode="numeric"
+    oninput="this.value=this.value.replace(/\D/g,'')">
 
   <button onclick="login()">Войти</button>
-
   <p id="error"></p>
 </div>
 
 <div id="main" class="hidden">
-
   <div class="top">
     <span id="bal">Баланс: 0</span>
   </div>
@@ -35,12 +32,17 @@
   <button onclick="scan()">Сканировать</button>
   <button onclick="pay()">Пополнить</button>
   <button id="endBtn" class="hidden" onclick="endRide()">Завершить</button>
-
 </div>
 
 <div id="admin" class="hidden">
 
   <h2>Админ</h2>
+
+  <h3>Пополнение</h3>
+  <button onclick="createPay()">Добавить код</button>
+  <div id="pays"></div>
+
+  <h3>Самокаты</h3>
 
   <input id="aid" placeholder="ID 6 цифр">
   <input id="abat" placeholder="Заряд">
